@@ -29,26 +29,22 @@ _CROP_PROMPT = (
 )
 
 
+# ── Pure helpers (no I/O) ──────────────────────────────────────────────────────
+
 def _image_to_b64jpeg(image: Image.Image) -> str:
     buf = io.BytesIO()
     image.save(buf, format="JPEG", quality=95)
     return base64.b64encode(buf.getvalue()).decode()
 
 
-async def detect_table_bbox(image: Image.Image) -> tuple[float, float, float, float]:
-    """Calls Gemma 4 to locate the repair table. Returns (x1, y1, x2, y2) normalized to [0, 1]."""
-    b64 = _image_to_b64jpeg(image)
-
-    payload = {
+def _build_payload(b64: str) -> dict:
+    return {
         "model": GEMMA4_MODEL,
         "messages": [
             {
                 "role": "user",
                 "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{b64}"},
-                    },
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
                     {"type": "text", "text": _CROP_PROMPT},
                 ],
             }
@@ -57,20 +53,19 @@ async def detect_table_bbox(image: Image.Image) -> tuple[float, float, float, fl
         "temperature": 0,
     }
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        resp = await client.post(f"{GEMMA4_SERVER_URL}/chat/completions", json=payload)
-    resp.raise_for_status()
 
-    content = resp.json()["choices"][0]["message"]["content"].strip()
+def _parse_bbox(content: str) -> tuple[float, float, float, float]:
+    """Parse Gemma 4 response into normalized (x1, y1, x2, y2) in [0, 1].
 
-    # Gemini-style bounding boxes: 1000×1000 coordinate space, format [ymin, xmin, ymax, xmax]
+    Gemma 4 (following Gemini convention) uses a 1000×1000 coordinate space
+    and returns [ymin, xmin, ymax, xmax].
+    """
     match = re.search(r"\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]", content)
     if not match:
         raise ValueError(f"Gemma 4 回傳格式無法解析: {content[:300]}")
 
     ymin, xmin, ymax, xmax = (int(match.group(i)) for i in range(1, 5))
 
-    # Convert from 1000×1000 space to normalized [0, 1]
     x1, y1 = max(0.0, xmin / 1000), max(0.0, ymin / 1000)
     x2, y2 = min(1.0, xmax / 1000), min(1.0, ymax / 1000)
 
@@ -82,9 +77,8 @@ async def detect_table_bbox(image: Image.Image) -> tuple[float, float, float, fl
     return x1, y1, x2, y2
 
 
-def _draw_bbox(
-    image: Image.Image, x1: float, y1: float, x2: float, y2: float
-) -> Image.Image:
+def draw_bbox(image: Image.Image, x1: float, y1: float, x2: float, y2: float) -> Image.Image:
+    """Draw a red bounding box on a copy of the image. Coordinates are normalized [0, 1]."""
     w, h = image.size
     annotated = image.copy()
     draw = ImageDraw.Draw(annotated)
@@ -97,13 +91,35 @@ def _draw_bbox(
     return annotated
 
 
+# ── Network calls ──────────────────────────────────────────────────────────────
+
+def detect_table_bbox_sync(image: Image.Image) -> tuple[float, float, float, float]:
+    """Sync version — for CLI / batch scripts."""
+    payload = _build_payload(_image_to_b64jpeg(image))
+    with httpx.Client(timeout=120.0) as client:
+        resp = client.post(f"{GEMMA4_SERVER_URL}/chat/completions", json=payload)
+    resp.raise_for_status()
+    return _parse_bbox(resp.json()["choices"][0]["message"]["content"].strip())
+
+
+async def detect_table_bbox(image: Image.Image) -> tuple[float, float, float, float]:
+    """Async version — for FastAPI."""
+    payload = _build_payload(_image_to_b64jpeg(image))
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        resp = await client.post(f"{GEMMA4_SERVER_URL}/chat/completions", json=payload)
+    resp.raise_for_status()
+    return _parse_bbox(resp.json()["choices"][0]["message"]["content"].strip())
+
+
+# ── FastAPI entry point ────────────────────────────────────────────────────────
+
 async def crop_document(file_bytes: bytes, filename: str) -> bytes:
     """End-to-end: file bytes → JPEG bytes of original image with red bbox drawn."""
     from services.recognizer import load_document_as_image
 
     image = load_document_as_image(file_bytes, filename)
     x1, y1, x2, y2 = await detect_table_bbox(image)
-    annotated = _draw_bbox(image, x1, y1, x2, y2)
+    annotated = draw_bbox(image, x1, y1, x2, y2)
     buf = io.BytesIO()
     annotated.save(buf, format="JPEG", quality=95)
     return buf.getvalue()
