@@ -10,7 +10,7 @@
   python scripts/batch_crop_a05.py [--input INPUT_DIR] [--output OUTPUT_DIR]
 
 預設輸入：test_data/A05/print/
-預設輸出：test_data/A05/print_cropped/
+預設輸出：output/crop/A05/
 """
 
 import argparse
@@ -176,8 +176,8 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default="test_data/A05/print_cropped",
-        help="輸出資料夾（預設：test_data/A05/print_cropped）",
+        default="output/crop/A05",
+        help="輸出資料夾（預設：output/crop/A05）",
     )
     args = parser.parse_args()
 
