@@ -9,6 +9,12 @@ class RecognitionResponse(BaseModel):
     統計表: list[dict[str, Any]] = []
 
 
+class CropResponse(BaseModel):
+    ok: bool
+    filename: str
+    cropped_image: str  # data URL: "data:image/jpeg;base64,..."
+
+
 class ErrorResponse(BaseModel):
     ok: bool
     error: str
