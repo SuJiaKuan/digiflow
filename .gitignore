@@ -23,6 +23,12 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+.*~
+tags
+
+# Fixed files or directories
+test_data/
+tmp/
 
 # Script outputs
 output/
