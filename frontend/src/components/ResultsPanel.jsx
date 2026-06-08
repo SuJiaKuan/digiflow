@@ -1,4 +1,5 @@
 import CropPanel from "./CropPanel.jsx";
+import EvaluationPanel from "./EvaluationPanel.jsx";
 import RecognitionTable from "./RecognitionTable.jsx";
 
 export default function ResultsPanel({
@@ -32,7 +33,10 @@ export default function ResultsPanel({
           <div className="results-panel__data-col">
             <p className="col-label">辨識結果</p>
             {results ? (
-              <RecognitionTable rows={results["辨識結果"]} stats={results["統計表"]} />
+              <>
+                <RecognitionTable rows={results["辨識結果"]} stats={results["統計表"]} />
+                <EvaluationPanel evaluation={results["evaluation"]} />
+              </>
             ) : recognizeError ? (
               <div className="crop-panel__placeholder crop-panel__placeholder--error">
                 辨識失敗：{recognizeError}

@@ -6,3 +6,4 @@ httpx
 Pillow
 PyMuPDF
 python-dotenv
+openpyxl

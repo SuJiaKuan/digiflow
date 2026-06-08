@@ -5,6 +5,7 @@ from google import genai
 
 from models.schemas import CropResponse, RecognitionResponse
 from services.cropper import crop_document
+from services.evaluator import evaluate as run_evaluation
 from services.recognizer import process_document
 
 router = APIRouter()
@@ -29,11 +30,19 @@ async def recognize(request: Request, file: UploadFile = File(...)):
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
+    recognition_rows = result.get("辨識結果", [])
+
+    try:
+        evaluation = run_evaluation(recognition_rows, filename)
+    except Exception as exc:
+        evaluation = {"error": str(exc)}
+
     return RecognitionResponse(
         ok=True,
         filename=filename,
-        辨識結果=result.get("辨識結果", []),
+        辨識結果=recognition_rows,
         統計表=result.get("統計表", []),
+        evaluation=evaluation,
     )
 
 

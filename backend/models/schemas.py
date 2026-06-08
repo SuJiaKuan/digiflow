@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 from pydantic import BaseModel
 
 
@@ -7,6 +7,7 @@ class RecognitionResponse(BaseModel):
     filename: str
     辨識結果: list[dict[str, Any]] = []
     統計表: list[dict[str, Any]] = []
+    evaluation: Optional[dict[str, Any]] = None
 
 
 class CropResponse(BaseModel):

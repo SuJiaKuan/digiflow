@@ -324,6 +324,214 @@ body {
   flex-shrink: 0;
 }
 
+/* ── Evaluation panel ── */
+.eval-panel {
+  border-top: 2px solid #dde3ee;
+  background: #f9fafc;
+  max-height: 44vh;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.eval-panel__header {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #4a5568;
+  padding: 0.5rem 1rem;
+  background: #eef1f7;
+  border-bottom: 1px solid #dde3ee;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.eval-error {
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: #c0392b;
+}
+
+.eval-perfect {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+/* Score cards */
+.eval-scores {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #dde3ee;
+}
+
+.eval-score-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #dde3ee;
+  min-width: 0;
+}
+
+.eval-score-card__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7a99;
+  margin-bottom: 0.2rem;
+}
+
+.eval-score-card__value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.eval-score-card--recall  .eval-score-card__value { color: #1d6fbf; }
+.eval-score-card--precision .eval-score-card__value { color: #7c3aed; }
+.eval-score-card--f1      .eval-score-card__value { color: #0d7c50; }
+
+.eval-score-card__bar {
+  height: 5px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.3rem;
+}
+
+.eval-score-card__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.eval-score-card--recall   .eval-score-card__fill { background: #3b82f6; }
+.eval-score-card--precision .eval-score-card__fill { background: #8b5cf6; }
+.eval-score-card--f1       .eval-score-card__fill { background: #10b981; }
+
+.eval-score-card__sub {
+  font-size: 0.7rem;
+  color: #8896b0;
+}
+
+/* Error sections */
+.eval-errors {
+  padding: 0.5rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.eval-section__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #dde3ee;
+}
+
+.err-group {
+  margin-bottom: 0.4rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.err-group--wrong   { border-color: #fde68a; }
+.err-group--missing { border-color: #fca5a5; }
+.err-group--extra   { border-color: #93c5fd; }
+
+.err-group__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+}
+
+.err-group--wrong   .err-group__label { background: #fef9c3; color: #92400e; }
+.err-group--missing .err-group__label { background: #fee2e2; color: #991b1b; }
+.err-group--extra   .err-group__label { background: #dbeafe; color: #1e40af; }
+
+.err-group__list {
+  background: #fff;
+}
+
+.err-group__overflow {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  color: #6b7a99;
+  font-style: italic;
+}
+
+.err-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.err-row:last-child { border-bottom: none; }
+
+.err-row--wrong   { background: #fffbeb; }
+.err-row--missing { background: #fff5f5; }
+.err-row--extra   { background: #eff6ff; }
+
+.err-key,
+.err-loc {
+  font-weight: 600;
+  color: #1a1a2e;
+  min-width: 0;
+  word-break: break-all;
+}
+
+.err-gt {
+  color: #166534;
+  background: #dcfce7;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.err-pred {
+  color: #991b1b;
+  background: #fee2e2;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.err-arrow { color: #6b7a99; }
+
+.err-label--missing {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9b1c1c;
+  background: #fecaca;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+}
+
+.err-label--extra {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #1e3a8a;
+  background: #bfdbfe;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+}
+
 .empty-msg {
   padding: 2rem;
   color: #6b7a99;
