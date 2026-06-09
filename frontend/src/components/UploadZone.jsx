@@ -2,20 +2,21 @@ import { useRef, useState } from "react";
 
 const ACCEPTED = ".jpg,.jpeg,.png,.pdf";
 
-export default function UploadZone({ onFile }) {
+export default function UploadZone({ onFiles }) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
 
   function handleDrop(e) {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) onFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) onFiles(files);
   }
 
   function handleChange(e) {
-    const file = e.target.files[0];
-    if (file) onFile(file);
+    const files = Array.from(e.target.files);
+    if (files.length) onFiles(files);
+    e.target.value = "";
   }
 
   return (
@@ -32,11 +33,12 @@ export default function UploadZone({ onFile }) {
     >
       <div className="upload-zone__icon">📄</div>
       <p className="upload-zone__primary">拖曳檔案至此，或點擊選擇</p>
-      <p className="upload-zone__secondary">支援 JPG、PNG、PDF</p>
+      <p className="upload-zone__secondary">支援 JPG、PNG、PDF，可一次選擇多個檔案</p>
       <input
         ref={inputRef}
         type="file"
         accept={ACCEPTED}
+        multiple
         onChange={handleChange}
         style={{ display: "none" }}
       />

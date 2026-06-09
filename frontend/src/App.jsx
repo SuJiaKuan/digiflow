@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cropDocument, recognizeDocument } from "./api/client.js";
 import ResultsPanel from "./components/ResultsPanel.jsx";
 import UploadZone from "./components/UploadZone.jsx";
@@ -9,76 +9,128 @@ const MODES = [
   { id: "recognize", label: "只跑辨識" },
 ];
 
+let _id = 0;
+
 export default function App() {
   const [mode, setMode] = useState("all");
-  const [file, setFile] = useState(null);
-  const [recognizeResult, setRecognizeResult] = useState(null);
-  const [recognizeError, setRecognizeError] = useState(null);
-  const [cropStatus, setCropStatus] = useState("idle");
-  const [cropUrl, setCropUrl] = useState(null);
-  const [cropError, setCropError] = useState(null);
+  const [items, setItems] = useState([]);
 
-  function handleFile(selectedFile) {
-    setFile(selectedFile);
-    setRecognizeResult(null);
-    setRecognizeError(null);
-    setCropStatus("idle");
-    setCropUrl(null);
-    setCropError(null);
-
-    if (mode === "all" || mode === "crop") {
-      setCropStatus("loading");
-      cropDocument(selectedFile)
-        .then((dataUrl) => { setCropUrl(dataUrl); setCropStatus("success"); })
-        .catch((err) => { setCropError(err.message); setCropStatus("error"); });
-    }
-
-    if (mode === "all" || mode === "recognize") {
-      recognizeDocument(selectedFile)
-        .then((data) => setRecognizeResult(data))
-        .catch((err) => setRecognizeError(err.message));
-    }
+  function patch(id, delta) {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, ...delta } : it));
   }
 
-  function handleReset() {
-    setFile(null);
-    setRecognizeResult(null);
-    setRecognizeError(null);
-    setCropStatus("idle");
-    setCropUrl(null);
-    setCropError(null);
+  function handleFiles(fileList) {
+    const newItems = Array.from(fileList).map(file => ({
+      id: _id++,
+      file,
+      cropStatus: (mode === "all" || mode === "crop") ? "loading" : "idle",
+      cropUrl: null,
+      cropError: null,
+      recognizeResult: null,
+      recognizeError: null,
+    }));
+
+    setItems(prev => [...prev, ...newItems]);
+
+    newItems.forEach(({ id, file }) => {
+      if (mode === "all" || mode === "crop") {
+        cropDocument(file)
+          .then(url => patch(id, { cropUrl: url, cropStatus: "success" }))
+          .catch(err => patch(id, { cropError: err.message, cropStatus: "error" }));
+      }
+      if (mode === "all" || mode === "recognize") {
+        recognizeDocument(file)
+          .then(data => patch(id, { recognizeResult: data }))
+          .catch(err => patch(id, { recognizeError: err.message }));
+      }
+    });
   }
 
-  if (!file) {
+  if (items.length === 0) {
     return (
       <div className="app">
         <AppHeader />
         <main className="app-main">
           <div className="upload-wrapper">
             <ModeSelector mode={mode} onChange={setMode} />
-            <UploadZone onFile={handleFile} />
+            <UploadZone onFiles={handleFiles} />
           </div>
         </main>
       </div>
     );
   }
 
+  const showCrop = mode === "all" || mode === "crop";
+  const showRecognize = mode === "all" || mode === "recognize";
+
+  function isBusy(item) {
+    return (showCrop && item.cropStatus === "loading") ||
+           (showRecognize && !item.recognizeResult && !item.recognizeError);
+  }
+
+  const busyItems = items.filter(isBusy);
+  const doneCount = items.length - busyItems.length;
+
   return (
     <div className="app">
       <AppHeader />
-      <main className="app-main app-main--results">
-        <ResultsPanel
-          file={file}
-          results={recognizeResult}
-          recognizeError={recognizeError}
-          cropStatus={cropStatus}
-          cropUrl={cropUrl}
-          cropError={cropError}
-          mode={mode}
-          onReset={handleReset}
-        />
+      <div className="multi-toolbar">
+        <ModeSelector mode={mode} onChange={setMode} />
+        <div className="multi-toolbar__right">
+          {busyItems.length > 0 ? (
+            <div className="progress-banner">
+              <span className="spinner spinner--sm" />
+              <span>
+                正在處理：<strong>{busyItems[0].file.name}</strong>
+                {items.length > 1 && `（${doneCount} / ${items.length} 完成）`}
+              </span>
+            </div>
+          ) : (
+            <span className="done-badge">✓ 全部完成（{items.length} 個檔案）</span>
+          )}
+          <AddFilesButton onFiles={handleFiles} />
+          <button className="btn-secondary" onClick={() => setItems([])}>清除全部</button>
+        </div>
+      </div>
+      <main className="app-main app-main--multi">
+        {items.map(item => (
+          <ResultsPanel
+            key={item.id}
+            file={item.file}
+            results={item.recognizeResult}
+            recognizeError={item.recognizeError}
+            cropStatus={item.cropStatus}
+            cropUrl={item.cropUrl}
+            cropError={item.cropError}
+            mode={mode}
+            onReset={() => setItems(prev => prev.filter(it => it.id !== item.id))}
+          />
+        ))}
       </main>
     </div>
+  );
+}
+
+function AddFilesButton({ onFiles }) {
+  const inputRef = useRef(null);
+  return (
+    <>
+      <button className="btn-primary" onClick={() => inputRef.current.click()}>
+        + 新增檔案
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.pdf"
+        multiple
+        onChange={e => {
+          const files = Array.from(e.target.files);
+          if (files.length) onFiles(files);
+          e.target.value = "";
+        }}
+        style={{ display: "none" }}
+      />
+    </>
   );
 }
 

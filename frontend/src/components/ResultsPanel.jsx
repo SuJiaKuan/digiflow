@@ -15,8 +15,8 @@ export default function ResultsPanel({
   return (
     <div className="results-panel">
       <div className="results-panel__toolbar">
-        <span className="results-panel__filename">{file?.name ?? results?.filename}</span>
-        <button className="btn-secondary" onClick={onReset}>重新上傳</button>
+        <span className="results-panel__filename">{file?.name}</span>
+        <button className="btn-secondary" onClick={onReset}>移除</button>
       </div>
 
       <div className={`results-panel__body${twoCol ? " results-panel__body--2col" : ""}`}>
